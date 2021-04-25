@@ -1,5 +1,6 @@
 package com.kafka.service;
 
+import com.kafka.model.Student;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,23 +18,22 @@ public class ProducerService {
     private String topicName;
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, Student> kafkaTemplate;
 
-    public void sendMessage(String message){
+    public void sendMessage(Student message) {
+        ListenableFuture<SendResult<String, Student>> future = kafkaTemplate.send(topicName, message);
+        future.addCallback(
+                new ListenableFutureCallback<SendResult<String, Student>>() {
+                    @Override
+                    public void onSuccess(SendResult<String, Student> result) {
+                        log.info(
+                                "Sent message=[{}] with offset=[{}]", message, result.getRecordMetadata().offset());
+                    }
 
-        ListenableFuture<SendResult<String, String>> future =
-                kafkaTemplate.send(topicName, message);
-
-        future.addCallback(new ListenableFutureCallback<SendResult<String, String>>() {
-
-            @Override
-            public void onSuccess(SendResult<String, String> result) {
-                log.info("Sent message=[{}] with offset=[{}]" , message ,result.getRecordMetadata().offset());
-            }
-            @Override
-            public void onFailure(Throwable ex) {
-                log.info("Unable to send message=[{}] due to : {}",message,ex.getMessage());
-            }
-        });
+                    @Override
+                    public void onFailure(Throwable ex) {
+                        log.info("Unable to send message=[{}] due to : {}", message, ex.getMessage());
+                    }
+                });
     }
 }

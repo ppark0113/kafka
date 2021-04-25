@@ -16,7 +16,7 @@ public class KafkaController {
 
     @PostMapping (value = "/send/student/info")
     public String kafkaMessage(@RequestBody Student message){
-        producerService.sendMessage(message.toString());
+        producerService.sendMessage(message);
         return "Success";
     }
 }
